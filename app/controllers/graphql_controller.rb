@@ -11,8 +11,11 @@ class GraphqlController < ApplicationController
     context = {
       # Query context goes here, for example:
       # current_user: current_user,
+      session: session,
+      current_user: current_user
     }
     result = CrenkPostSchema.execute(query, variables: variables, context: context, operation_name: operation_name)
+    binding.pry
     render json: result
   rescue => e
     raise e unless Rails.env.development?
@@ -20,6 +23,16 @@ class GraphqlController < ApplicationController
   end
 
   private
+
+  def current_user
+    return unless session[:token]
+
+    User.find(decoded_auth_token[:user_id])
+  end
+
+  def decoded_auth_token
+    @decoded_auth_token ||= JsonWebToken.decode(session[:token])
+  end
 
   # Handle variables in form data, JSON body, or a blank value
   def prepare_variables(variables_param)
